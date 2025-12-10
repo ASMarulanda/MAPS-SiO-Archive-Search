@@ -1,6 +1,9 @@
-# MAPS SiO Archive Search Pipeline
+# MAPS SiO(v=0) Archive Search Pipeline
 
-This folder contains a reproducible Python pipeline designed to search the ALMA public archive for SiO (v=0) rotational transitions toward the MAPS disk sample:
+This folder contains a complete, reproducible Python pipeline for identifying **all ALMA archival observations** toward the **MAPS disk sample** that include **any SiO(v=0) rotational transition** from  
+**J = 1→0** up to **J = 20→19**.
+
+The MAPS targets processed by this pipeline are:
 
 - IM Lup  
 - AS 209  
@@ -8,101 +11,137 @@ This folder contains a reproducible Python pipeline designed to search the ALMA 
 - HD 163296  
 - MWC 480  
 
-The primary goal is to identify all archival ALMA observations whose spectral windows accidentally or intentionally include any
-$\mathrm{SiO}(\nu = 0)$ line from $J = 1\text{--}0$ to $J = 20\text{--}19$.  
-The pipeline generates a clean list of datasets (MOUS IDs) ready for downloading and subsequent imaging and analysis.
-
----
-## 🔍 What This Pipeline Does
-
-The script:
-1. Queries the ALMA archive (public access only) using the TAP/ObsCore interface via the **ALminer** Python package.  
-2. For each MAPS source, performs a cone search with a radius of $1^\prime$ (one arcminute).  
-3. For every returned spectral window (SPW), checks whether its frequency range
-   $[\nu_{\min}, \nu_{\max}]$ contains any $\mathrm{SiO}(\nu = 0)$ rest frequency from $J = 1\text{--}0$ through $J = 20\text{--}19$.  
-4. Collects all positive matches and generates two key output tables:
-   - **Per-SPW table** – one row per spectral window containing $\mathrm{SiO}$ coverage.  
-   - **Per-MOUS table** – one row per dataset (MOUS ID), grouping all $\mathrm{SiO}$ transitions found within that scheduling block.  
-5. Optionally downloads all public MOUS datasets using **astroquery.alma**.
-
-This pipeline implements the MAPS pre-filter and download step described in the thesis.
+The goal is to produce a clean list of ALMA datasets (MOUS IDs) whose spectral windows cover at least one SiO(v=0) transition, enabling automated download, calibration, and imaging in subsequent stages of the thesis pipeline.
 
 ---
 
-## 📁 Files in This Folder
+## Contents
 
-- `maps_sio_archive_search.py` – main script that performs archive querying, spectral-window filtering, table generation, and optional downloading.  
-- `README.md` – this file.  
-- `example_output/` *(optional)* – example exported tables for reference:
-  - `sio_spw_matches.csv`  
-  - `sio_mous_summary.csv`  
+```
+maps_sio_archive_search.py      # Main pipeline script
+sio_spw_matches.csv             # Per-SPW SiO match table (auto-generated)
+sio_spw_matches.tex             # Per-SPW table in LaTeX format
+sio_mous_summary.csv            # Per-MOUS SiO summary table (auto-generated)
+sio_mous_summary.tex            # Per-MOUS table in LaTeX format
+README.md                       # This file
+```
+
+---
+
+## Pipeline Overview
+
+### 1. Query ALMA Archive (ObsCore/TAP)
+
+The script uses **ALminer** to perform a 1 arcmin cone search around each MAPS source.  
+All public archival observations matching the coordinate search are returned.
+
+### 2. Identify SiO-Covering Spectral Windows
+
+For each returned spectral window (SPW), the script evaluates whether the frequency range  
+\[
+[
+u_{\min}, 
+u_{\max}]
+\]
+contains any of the **20 SiO(v=0)** rotational transitions from J=1–0 to J=20–19.
+
+### 3. Build Output Tables
+
+The script generates two structured products:
+
+#### Per-SPW Table (`sio_spw_matches.*`)
+Each row corresponds to a single SPW containing at least one SiO transition.  
+Columns include:
+
+- Source  
+- Project  
+- ALMA Band  
+- min\_freq\_GHz, max\_freq\_GHz  
+- SiO\_transition, SiO\_freq\_GHz  
+- ang\_res\_arcsec  
+- MOUS\_ID  
+
+#### Per-MOUS Table (`sio_mous_summary.*`)
+Each row corresponds to a unique MOUS ID and aggregates all SPWs and SiO transitions found in that dataset.
+
+Columns include:
+
+- MOUS\_ID  
+- Source  
+- Project  
+- ALMA Band  
+- SiO\_transitions  
+- SiO\_freqs\_GHz  
+- min\_freq\_GHz, max\_freq\_GHz  
+- ang\_res\_arcsec  
+
+This table defines the **final list of SiO-sensitive datasets** used for downstream analysis.
 
 ---
 
-## 📦 Installation
+## Installation
 
-It is highly recommended to use a virtual environment:
+It is recommended to use a virtual environment:
 
-`python3 -m venv venv`
-`source venv/bin/activate`
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
-Install required packages:
+Install the required dependencies:
 
-`pip install alminer astroquery pandas`
+```bash
+pip install alminer astroquery pandas numpy
+```
 
-Note: No ALMA login is needed, as the script uses public archive access only.
-
----
-##  ▶️ How to run
-
-From inside this folder (maps_sio_archive_search/):
-
-`python maps_sio_archive_search.py`
-
-The script will automatically:
-Query ALMA for all public observations of IM Lup, AS 209, GM Aur, HD 163296, and MWC 480.
-Identify all spectral windows that include any $\mathrm{SiO}(\nu=0)$ transition.
-
-Export four files:
-
-`sio_spw_matches.csv`
-`sio_spw_matches.tex`
-`sio_mous_summary.csv`
-`sio_mous_summary.tex`
+No ALMA login is required; the script only accesses public archive data.
 
 ---
-## 📊 Output Tables
 
-1. Per-SPW Table (sio_spw_matches.*)
-Each row corresponds to one spectral window that covers an $\mathrm{SiO}$ transition. This table is useful for tracking which specific projects and SPWs contain the desired spectral coverage.
-Key Columns Include:
+## Running the Pipeline
 
-Source
-`Project`
-`ALMA_Band`
-`min_freq_GHz, max_freq_GHz` (The spectral window boundaries)
-`SiO_transition, SiO_freq_GHz `(The specific transition found)
-`ang_res_arcsec`
-`MOUS_ID`
+From inside this folder (`maps_sio_archive_search/`):
 
-3. Per-MOUS Table (sio_mous_summary.*)
-Each row corresponds to a single ALMA dataset (MOUS ID). This table summarizes all $\mathrm{SiO}$ coverage within that dataset and is the primary table used for determining which datasets to download and pass to the next analysis stage.
+```bash
+python3 maps_sio_archive_search.py
+```
 
-Key Columns Include:
-`MOUS_ID`
-`Source`
-`Project`
-`ALMA_Band`
-`SiO_transitions` (List of all transitions found in this MOUS)
-`SiO_freqs_GHz`
-`min_freq_GHz, max_freq_GHz` (The total frequency range covered by the MOUS)
-`ang_res_arcsec` (Angular resolution of the observation)
+The script will:
+
+1. Query ALMA for all MAPS sources  
+2. Identify any SPWs covering SiO(v=0) transitions  
+3. Generate:
+   - `sio_spw_matches.csv`  
+   - `sio_spw_matches.tex`  
+   - `sio_mous_summary.csv`  
+   - `sio_mous_summary.tex`  
 
 ---
-## 💾 Optional: Automatic Download of MOUS Datasets
 
-`Inside maps_sio_archive_search.py`, its possible to change the configuration variable:
-`DO_DOWNLOAD = True`
-Setting this to True triggers automated retrieval for each public MOUS listed in sio_mous_summary.csv using the `Alma().retrieve_data_from_uid(mous_id)` function.
+## Optional: Automatic Dataset Download
 
-## ⚠️ Warning: Some datasets are very large (GB-scale). Download is OFF by default to avoid unintended transfers.
+Inside `maps_sio_archive_search.py`, set:
+
+```python
+DO_DOWNLOAD = True
+```
+
+This will trigger:
+
+```python
+Alma().retrieve_data_from_uid(mous_id)
+```
+
+for every MOUS listed in `sio_mous_summary.csv`.
+
+**Warning:**  
+Some ALMA datasets exceed multiple gigabytes.  
+Downloading is disabled by default to avoid accidental large transfers.
+
+---
+
+## License
+
+MIT License.
+
+--------------------------------------------------------------------------------
