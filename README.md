@@ -20,24 +20,20 @@ For every returned spectral window (SPW), checks whether its frequency range $[\
 
 Collects all positive matches and generates two key output tables:
 
-Per-SPW table: one row per spectral window containing $\mathrm{SiO}$ coverage.
+* **Per-SPW table**: one row per spectral window containing $\mathrm{SiO}$ coverage.
 
-Per-MOUS table: one row per dataset (MOUS ID), grouping all $\mathrm{SiO}$ transitions found within that scheduling block.
+* **Per-MOUS table**: one row per dataset (MOUS ID), grouping all $\mathrm{SiO}$ transitions found within that scheduling block.
 
-Optionally downloads all public MOUS datasets using astroquery.alma.
+Optionally downloads all public MOUS datasets using **astroquery.alma**.
 
 This pipeline implements the MAPS pre-filter and download step described in the thesis.
 
 ## 📁 Files in this folder
 
 maps_sio_archive_search.py: The main script that performs archive querying, spectral-window filtering, table generation, and optional downloading.
-
 README.md: (This file)
-
 example_output/ (optional): Contains example exported tables for reference:
-
 sio_spw_matches.csv
-
 sio_mous_summary.csv
 
 ## 📦 Installation
@@ -47,11 +43,9 @@ It is highly recommended to use a virtual environment:
 python3 -m venv venv
 source venv/bin/activate
 
-
 Install required packages:
 
 pip install alminer astroquery pandas
-
 
 Note: No ALMA login is needed, as the script uses public archive access only.
 
@@ -61,29 +55,21 @@ From inside this folder (maps_sio_archive_search/):
 
 python maps_sio_archive_search.py
 
-
 The script will automatically:
-
 Query ALMA for all public observations of IM Lup, AS 209, GM Aur, HD 163296, and MWC 480.
-
 Identify all spectral windows that include any $\mathrm{SiO}(\nu=0)$ transition.
 
 Export four files:
 
 sio_spw_matches.csv
-
 sio_spw_matches.tex
-
 sio_mous_summary.csv
-
 sio_mous_summary.tex
 
 ## 📊 Output Tables
 
 1. Per-SPW Table (sio_spw_matches.*)
-
 Each row corresponds to one spectral window that covers an $\mathrm{SiO}$ transition. This table is useful for tracking which specific projects and SPWs contain the desired spectral coverage.
-
 Key Columns Include:
 
 Source
@@ -94,7 +80,7 @@ SiO_transition, SiO_freq_GHz (The specific transition found)
 ang_res_arcsec
 MOUS_ID
 
-2. Per-MOUS Table (sio_mous_summary.*)
+3. Per-MOUS Table (sio_mous_summary.*)
 Each row corresponds to a single ALMA dataset (MOUS ID). This table summarizes all $\mathrm{SiO}$ coverage within that dataset and is the primary table used for determining which datasets to download and pass to the next analysis stage.
 
 Key Columns Include:
